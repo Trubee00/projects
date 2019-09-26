@@ -1,0 +1,476 @@
+/*
+ * Project Title:
+ * - StarSweeper
+ * Description: (should be a few sentences)
+ * This program is a game where the player has to identify where the
+ * stars on the game board are. If they click a star, it explodes and
+ * the player loses. If they find all the stars, the player wins.
+ *
+ * Developers:
+ * - Sophia Keller - kellesm@mail.uc.edu
+ * - Caden Trubee- trubeect@mail.uc.edu
+ *
+ * Help Received:
+ *
+ * Special Instructions: // optional
+ * - No special instructions
+ *
+ * Developer comments: // Not optional
+ * Developer 1:
+ * I developed most of the logic of what the game would need, and
+ * created some of the functions. I learned that coding requires a lot
+ * of patience and determination.
+ * Developer 2:
+ * I developed some of the logic and double checked the logic of developer
+ * 1.  I came up with how the creative flow should work.  I also created
+ * some of the functions.  I learned there are so many different ways to
+ * program one thing.
+ */
+
+
+#include <iostream>
+#include <stdlib.h>
+#include <time.h>
+#include <iomanip>
+#include <string.h>
+#include <vector>
+
+using namespace std;
+
+//Initialize vector for board
+int board[20][20] = {{0}};
+
+//Initialize vector for board visible to user
+char boardVisible[20][20] = {{0}};
+
+//Initialize other variables
+int size;
+const int star = 9;
+int starsFound = 0;
+int starsToFind;
+bool win = false;
+bool gameOver = false;
+
+/* Function Name: boardSize
+ *
+ * Function Description:
+ * This function generates the size of the board
+ * based on what difficulty the user chooses.
+ *
+ * Parameters:
+ * int difficulty - difficulty user chose
+ *
+ * return value:
+ * None
+ */
+void boardSize(int difficulty){
+    if (difficulty == 1){
+        size = 10;
+    }
+    else if (difficulty == 2){
+        size = 15;
+    }
+    else{
+        size = 20;
+    }
+}
+
+/* Function Name: starCreator
+ *
+ * Function Description:
+ * This function generates random locations for the stars
+ * and places them in the array at those locations
+ *
+ * Parameters:
+ * None
+ *
+ * return value:
+ * None
+ */
+void starCreator(){
+    int randRow, randCol;
+    //Make starsToFind 30% of board size
+    starsToFind = int(size * size * 0.3);
+    //Put stars into board
+    for (int i = 0; i < starsToFind; i++){
+        do{
+            randRow = rand() % size;
+            randCol = rand() % size;
+        }while(board[randRow][randCol] == star);
+        board[randRow][randCol] = star;
+    }
+
+}
+
+/* Function Name: numGenerator
+ *
+ * Function Description:
+ * This function traverses entire array and calculates
+ * number of stars surrounding each location, putting
+ * those numbers into the board array.
+ *
+ * Parameters:
+ * None
+ *
+ * return value:
+ * None
+ */
+void numGenerator(){
+    int count = 0;
+
+    for (int r = 0; r < size; r++){
+        for (int c = 0; c < size; c++){
+            if (board[r][c] != star){
+                //Up
+                if (r != 0 && board[r - 1][c] == star){
+                    count++;
+                }
+                //Left
+                if (c != 0 && board[r][c -1] == star){
+                    count++;
+                }
+                //Down
+                if (r != (size - 1) && board[r + 1][c] == star){
+                    count++;
+                }
+                //Right
+                if (c != (size - 1) && board[r][c + 1] == star){
+                    count++;
+                }
+                //Upper left diagonal
+                if (r != 0 && c != 0 && board[r - 1][c - 1] == star){
+                    count++;
+                }
+                //Lower left diagonal
+                if (r != (size - 1) && c != 0 && board[r + 1][c - 1] == star){
+                    count++;
+                }
+                //Upper right diagonal
+                if (r != 0 && c != (size - 1) && board[r - 1][c + 1] == star){
+                    count++;
+                }
+                //Lower right diagonal
+                if (r != (size - 1) && c != (size - 1) && board[r + 1][c + 1] == star){
+                    count++;
+                }
+
+                board[r][c] = count;
+                count = 0;
+            }
+        }
+    }
+}
+
+/* Function Name: visibleBoardCreate
+ *
+ * Function Description:
+ * This function initializes the board visible to the player
+ * so that it shows all #s.
+ *
+ * Parameters:
+ * none
+ *
+ * return value:
+ * void
+ */
+void visibleBoardCreate(){
+    for (int r = 0; r < size; r++){
+        for (int c = 0; c < size; c++){
+            boardVisible[r][c] = '#';
+        }
+    }
+}
+
+/* Function Name: displayBoard
+ *
+ * Function Description:
+ * This function displays the board to the player.
+ *
+ * Parameters:
+ * None
+ *
+ * return value:
+ * None
+ */
+void displayBoard(){
+    //Clear screen every time
+    system("CLS");
+
+    //Display number of stars
+    cout << "Stars found: " << starsFound << " / " << starsToFind << "\n" << endl;
+
+    //Display board
+    char letter = 'A';
+    cout << "   ";
+    for (int i = 0; i < size; i++){
+        cout << setw(3) << letter;
+        letter++;
+    }
+    cout << endl;
+
+
+    for (int r = 0; r < size; r++){
+        cout << setw(3) << r + 1 << " ";
+        for (int c = 0; c < size; c++){
+
+            cout << " " << boardVisible[r][c] << " ";
+        }
+
+        cout << endl;
+    }
+}
+
+/* Function Name: checkSurroundings
+ *
+ * Function Description:
+ * This function opens up all the locations surrounding
+ * the spot the user picked (as long as they are not stars).
+ * It is called from within the checkCoordinate function.
+ *
+ * Parameters:
+ * int row - the row user wants to check
+ * int col - the column user wants to ce=hck
+ *
+ * return value:
+ * None
+ */
+void checkSurroundings(int row, int col){
+    int r = row;
+    int c = col;
+    do{
+        if (board[r][c] == 0){
+            boardVisible[r][c] = ' ';
+        }
+        else{
+            boardVisible[r][c] = board[r][c] + 48;
+        }
+
+        ++r;
+    }while(r < size && board[r][c] != star);
+
+    r = row;
+    c = col;
+    do{
+        if (board[r][c] == 0){
+            boardVisible[r][c] = ' ';
+        }
+        else{
+            boardVisible[r][c] = board[r][c] + 48;
+        }
+
+        --r;
+    }while(r >= 0 && board[r][c] != star);
+
+    r = row;
+    c = col;
+    do{
+        if (board[r][c] == 0){
+            boardVisible[r][c] = ' ';
+        }
+        else{
+            boardVisible[r][c] = board[r][c] + 48;
+        }
+
+        ++c;
+    }while(c < size && board[r][c] != star);
+
+    r = row;
+    c = col;
+    do{
+        if (board[r][c] == 0){
+            boardVisible[r][c] = ' ';
+        }
+        else{
+            boardVisible[r][c] = board[r][c] + 48;
+        }
+
+        --c;
+    }while(c >= 0 && board[r][c] != star);
+}
+
+/* Function Name: checkCoordinate
+ *
+ * Function Description:
+ * This function checks the spot the user picked to see whether
+ * it was actually a star, or can be opened up.
+ *
+ * Parameters:
+ * char letter - the letter for the column the user chose
+ * int number - the number for the row the user chose
+ *
+ * return value:
+ * None
+ */
+void checkCoordinate(char letter, int number){
+    //Convert user input into row and columns indices
+    int row = number - 1;
+    int col = letter - 65;
+
+    int r = row;
+    int c = col;
+
+    if (board[row][col] == star){
+        gameOver = true;
+    }
+    else{
+        //Check surrounding locations in lower right diagonal
+        do{
+            checkSurroundings(row, col);
+
+            ++row;
+            ++col;
+        }while(row < size && col < size && board[row][col] != star);
+
+        //Check surroundings in lower left diagonal
+        row = r;
+        col = c;
+        do{
+            checkSurroundings(row, col);
+
+            ++row;
+            --col;
+        }while(row < size && col >= 0 && board[row][col] != star);
+
+        //Check surroundings in upper right diagonal
+        row = r;
+        col = c;
+        do{
+            checkSurroundings(row, col);
+
+            --row;
+            ++col;
+        }while(row >= 0 && col < size && board[row][col] != star);
+
+        //Check surroundings in upper left diagonal
+        row = r;
+        col = c;
+        do{
+            checkSurroundings(row, col);
+
+            --row;
+            --col;
+        }while(row >= 0 && col >= 0 && board[row][col] != star);
+    }
+}
+
+/* Function Name: markCoordinate
+ *
+ * Function Description:
+ * This function marks the spot the user wants with a !
+ * to indicate they think there is a star there.
+ *
+ * Parameters:
+ * char letter - the letter for the column the user chose
+ * int number - the number for the row the user chose
+ *
+ * return value:
+ * None
+ */
+void markCoordinate(char letter,int number){
+    //Convert user input into row and columns indices
+    int row = number - 1;
+    int col = letter - 65;
+
+    //Change board to show mark
+    boardVisible[row][col] = '!';
+    if (board[row][col] == star){
+        ++starsFound;
+    }
+}
+
+/* Function Name: gameEnd
+ *
+ * Function Description:
+ * This function prints a message depending on whether the
+ * player won or lost the game.
+ *
+ * Parameters:
+ * None
+ *
+ * return value:
+ * None
+ */
+void gameEnd(){
+    if (win){
+        cout << " Congrats! You found all the stars!" << endl;
+    }
+    else{
+        cout << " Oh no! The star exploded and you have DIED." << endl;
+    }
+
+}
+
+int main()
+{
+    //Initialize variables
+    char letter;
+    int number;
+    int difficulty;
+    int openOrMark;
+
+    //Seed random generator
+    srand(time(0));
+
+    //Ask user for difficulty
+    cout << "Choose a difficulty (type corresponding number): " << endl;
+    cout << "1 - Easy \n2 - Medium \n3 - Hard" << endl;
+    cin >> difficulty;
+    boardSize(difficulty);
+
+    //Start game up
+    starCreator();
+    numGenerator();
+    visibleBoardCreate();
+
+
+
+    do{
+        displayBoard();
+
+        cout << "\n Enter a letter coordinate (or x to exit): ";
+        cin >> letter;
+        //Check for validity
+        if (letter == 'x' || letter == 'X'){
+            break;
+        }
+        else if (letter < 'A' || letter > ('A' + size - 1)){
+            cout << "Invalid entry. Type anything to try again.";
+            cin >> letter; //This just waits so screen doesn't immediately clear
+            continue;
+        }
+
+        cout << "\n Enter a number coordinate: ";
+        cin >> number;
+        //Check for validity
+        if (number < 1 || number > size){
+            cout << "Invalid entry. Type anything to try again.";
+            cin >> letter; //This just waits so screen doesn't immediately clear
+            continue;
+        }
+
+        //Ask player if they want to open or mark given spot
+        do{
+            cout << "\n Type 1 to open spot or 2 to mark spot as star." << endl;
+            cin >> openOrMark;
+            if (openOrMark == 1){
+                checkCoordinate(letter, number);
+            }
+            else if (openOrMark == 2){
+                markCoordinate(letter, number);
+            }
+            else{
+                cout << "Invalid entry." << endl;
+            }
+        }while(openOrMark != 1 && openOrMark != 2);
+
+        //Check if all stars are found
+        if (starsFound == starsToFind){
+            gameOver = true;
+            win = true;
+        }
+    }while (!gameOver);
+
+    gameEnd();
+
+    return 0;
+}

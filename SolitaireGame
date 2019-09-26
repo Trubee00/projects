@@ -1,0 +1,851 @@
+/*
+ * Project Title:
+ * - Super Solitaire
+ * Description: (should be a few sentences)
+ * This program is a game where the player has to get all of the cards into
+ * the foundation piles at the bottom of the screen. If not, they LOSE.
+ *
+ * Developers:
+ * - Sophia Keller - kellesm@mail.uc.edu
+ * - Caden Trubee- trubeect@mail.uc.edu
+ *
+ * Help Received:
+ *
+ * Special Instructions: // optional
+ * - Type h to begin the game in order to see what commands to use
+ * - Also, the game is designed to be very hard and you will lose if
+ *   you get to the end of the deck without winning.
+ *
+ * Developer comments: // Not optional
+ * Developer 1 - Sophia Keller:
+ * I developed most of the logic of what the game would need, and
+ * created some of the functions and classes. I learned that solitaire is actually
+ * quite complicated.
+ * Developer 2 - Caden Trubee:
+ * I developed some of the logic and double checked the logic of developer
+ * 1.  I came up with how the creative flow should work.  I also created
+ * some of the functions. I helped to create the classes as well. I learned there are
+ * so many different ways to program one thing.
+ */
+
+#include <iostream>
+#include <string>
+#include <stdlib.h>
+#include <vector>
+#include <time.h>
+
+
+using namespace std;
+
+void lose();
+
+//CLASSES
+class Card{
+    //Overload << operator
+    friend ostream & operator<<( ostream &output, const Card &C ){
+        string s;
+        if (C.suit == "C")
+            s = "C";
+        else if (C.suit == "S")
+            s = "S";
+        else if (C.suit == "H")
+            s = "H";
+        else {
+            s = "D";
+        }
+        output << s << C.num;
+        return output;
+    }
+
+    friend istream & operator>>( istream &input, Card &C ){
+        input >> C.suit >> C.num;
+        return input;
+    }
+
+
+public:
+    string color;
+    string suit;
+    int num;
+    bool uncover;
+    Card(){
+        color = "";
+        suit = "";
+        num = 0;
+        uncover = false;
+    }
+
+    Card(string c, string s, int n){
+        color = c;
+        suit = s;
+        num = n;
+        uncover = false;
+    }
+
+    bool operator ==(const Card& c){
+        if (suit == c.suit && num == c.num){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+};
+
+class Foundation{
+public:
+    vector<Card> pile;
+    string suit;
+    int nextNum;
+    Card curCard;
+
+    Foundation(){
+        suit = "";
+        nextNum = 0;
+    }
+
+    Foundation(string s){
+        suit = s;
+        nextNum = 1;
+    }
+
+    Card getLastCard(vector<Card> suit){
+        return suit.at(suit.size() - 1);
+    }
+
+    vector<Card> addCard(Card &c){
+        //Make sure card is of the same suit and the next card to add
+        if (c.suit == suit){
+            if (c.num == nextNum){
+                pile.push_back(c);
+                curCard = c;
+                nextNum++;
+            }
+            else{
+                cout << "Not the next card in sequence! Try a different move." << endl;
+            }
+        }
+        else{
+            cout << "Must be of the same suit! Try a different move." << endl;
+        }
+        return pile;
+    }
+
+    void print(){
+        if (nextNum != 1){
+            cout << pile.at(pile.size() - 1) << endl;
+        }
+        else{
+            cout << "[ ]" << endl;
+        }
+    }
+
+    void empty(){
+        for (int i = 0; i < pile.size(); i++){
+            pile.pop_back();
+        }
+    }
+
+
+};
+
+class Tableau{
+public:
+    vector<Card> pile;
+    int numToStart;
+
+    Tableau(){
+        numToStart = 0;
+    }
+
+    Tableau(vector<Card> toAdd){
+        numToStart = toAdd.size();
+        for (int i = 0; i < numToStart; i++){
+            pile.push_back(toAdd.at(i));
+        }
+
+        pile.at(pile.size() - 1).uncover = true;
+    }
+
+    void print(){
+        for (int i = 0; i < pile.size(); i++){
+            if (pile.at(i).uncover)
+                cout << pile.at(i) << " ";
+            else {
+                cout << "[ ]";
+            }
+        }
+        cout << endl;
+    }
+
+    void addCard(Card &c){
+        string wait; //CHANGE
+        Card lastCard = getLastCard();
+        if (c.color != lastCard.color){
+            if (c.num == lastCard.num - 1){
+                c.uncover = true;
+                pile.push_back(c);
+            }
+            else{
+                cout << "That card is not next in the sequence!" << endl;
+                cin >> wait; //CHANGE
+            }
+        }
+        else{
+            cout << "They are the same color! Try a different move." << endl;
+            cin >> wait; //CHANGE
+        }
+
+    }
+
+    bool inPile(Card c){
+        for (int i = 0; i < pile.size(); i++){
+            if (pile.at(i).uncover){
+                if (c == pile.at(i)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    vector<Card> getCardsBelow(Card c){
+        int index;
+        vector<Card> cards;
+        //Find index of given card
+        for (int i = 0; i < pile.size(); i++){
+            if (c == pile.at(i)){
+                index = i;
+            }
+        }
+        //Add needed cards into vector
+        for (int i = index; i < pile.size(); i++){
+            cards.push_back(pile.at(i));
+        }
+        //Delete cards from pile
+        for (int i = index; i < pile.size(); i++){
+            cards.pop_back();
+        }
+        return cards;
+    }
+
+    void deleteLastCard(){
+        pile.pop_back();
+    }
+
+    Card getLastCard(){
+        return pile.at(pile.size() - 1);
+    }
+
+    void empty(){
+        for (int i = 0; i < pile.size(); i++){
+            pile.pop_back();
+        }
+    }
+
+
+};
+
+class Hand{
+public:
+    vector<Card> handDeck;
+    vector<Card> wasteDeck;
+    Card curCard;
+    int size;
+
+    Hand(){
+        size = 0;
+    }
+
+    Hand(vector<Card> deck){
+        for (int i = 27; i < 52; i++){
+            handDeck.push_back(deck.at(i));
+        }
+        curCard = handDeck.at(handDeck.size() - 1);
+        size = 24;
+    }
+
+    void print(){
+        if (size > 1){
+            cout << "[ ]" << curCard << endl << endl;
+        }
+        else {
+            cout << "   " << curCard << endl << endl;
+        }
+    }
+
+    void removeCard(){
+        if (size == 1){
+            lose();
+        }
+        else{
+            wasteDeck.push_back(curCard);
+            handDeck.pop_back();
+            curCard = handDeck.at(handDeck.size() - 1);
+            size--;
+        }
+    }
+
+    void empty(){
+        for (int i = 0; i < handDeck.size(); i++){
+            handDeck.pop_back();
+        }
+    }
+};
+
+class Waste{
+public:
+    vector<Card> pile;
+
+    Waste(){
+        pile = {};
+    }
+
+    void addCard(Card c){
+        pile.push_back(c);
+    }
+
+    void removeCard(){
+        pile.pop_back();
+    }
+
+    void emptyTheTrash(){
+        for (int i = 0; i < pile.size(); i++){
+            pile.pop_back();
+        }
+    }
+
+};
+
+
+//Declare variables
+vector<Card> deck;
+Hand handPile;
+Waste wastePile;
+Tableau pile1, pile2, pile3, pile4, pile5, pile6, pile7;
+Foundation spades("S");
+Foundation hearts("H");
+Foundation clubs("C");
+Foundation diamonds("D");
+bool loseGame = false;
+
+//FUNCTIONS
+
+/* Function Name: createDeck
+ *
+ * Function Description:
+ * This function creates a normal deck with 52 cards.
+ *
+ * Parameters:
+ * deck - empty deck
+ *
+ * return value:
+ * none
+ */
+vector<Card> createDeck(vector<Card> deck){
+    //Add clubs to deck
+    for (int i = 1; i <= 13; i++){
+        Card temp("black", "C", i);
+        deck.push_back(temp);
+    }
+    //Add spades to deck
+    for (int i = 1; i <= 13; i++){
+        Card temp("black", "S", i);
+        deck.push_back(temp);
+    }
+    //Add hearts to deck
+    for (int i = 1; i <= 13; i++){
+        Card temp("red", "H", i);
+        deck.push_back(temp);
+    }
+    //Add diamonds to deck
+    for (int i = 1; i <= 13; i++){
+        Card temp("red", "D", i);
+        deck.push_back(temp);
+    }
+    return deck;
+}
+
+/* Function Name: shuffle
+ *
+ * Function Description:
+ * This function shuffles the deck in random order.
+ *
+ * Parameters:
+ * deck
+ *
+ * return value:
+ * shuffled deck
+ */
+vector<Card> shuffle(vector<Card> deck){
+    Card temp;
+    vector<Card> newDeck(52, temp);
+    unsigned int n;
+
+    for (unsigned int i = 0; i < 52; i++){
+        temp = deck.at(i);
+
+        do{
+            n = rand() % 52;
+        }while(newDeck.at(n).num != 0);
+
+        newDeck.at(n) = temp;
+    }
+    return newDeck;
+}
+
+/* Function Name: drawCard
+ *
+ * Function Description:
+ * This function draws one card from the hand.
+ *
+ * Parameters:
+ * &handPile
+ * &wastePile
+ *
+ * return value:
+ * none
+ */
+void drawCard(Hand &handPile, Waste &wastePile){
+    Card cardToMove;
+    cardToMove = handPile.curCard;
+    wastePile.addCard(cardToMove);
+    handPile.removeCard();
+}
+
+/* Function Name: printTable
+ *
+ * Function Description:
+ * This function displays the table.
+ *
+ * Parameters:
+ * All of the different piles
+ *
+ * return value:
+ * none
+ */
+void printTable(Hand handPile, Tableau pile1, Tableau pile2, Tableau pile3, Tableau pile4, Tableau pile5, Tableau pile6, Tableau pile7, Foundation spades, Foundation hearts, Foundation clubs, Foundation diamonds){
+    handPile.print();
+    cout << "1: ";
+    pile1.print();
+    cout << "2: ";
+    pile2.print();
+    cout << "3: ";
+    pile3.print();
+    cout << "4: ";
+    pile4.print();
+    cout << "5: ";
+    pile5.print();
+    cout << "6: ";
+    pile6.print();
+    cout << "7: ";
+    pile7.print();
+    cout << endl << endl;
+    cout << "S (Spades):   ";
+    spades.print();
+    cout << "H (Hearts):   ";
+    hearts.print();
+    cout << "C (Clubs):    ";
+    clubs.print();
+    cout << "D (Diamonds): ";
+    diamonds.print();
+}
+
+/* Function Name: help
+ *
+ * Function Description:
+ * This function displays the controls.
+ *
+ * Parameters:
+ * none
+ *
+ * return value:
+ * none
+ */
+void help(){
+    system("CLS");
+    cout << "***GAME CONTROLS***" << endl;
+    cout << "Enter \'R\' to start a new game." << endl;
+    cout << "Enter \'Q\' to quit." << endl;
+    cout << "Enter \'D\' to draw a card from deck." << endl;
+    cout << "Enter \'M\' to make your move." << endl << endl;
+    cout << "***MAKING MOVES***" << endl;
+    cout << "For the first move, enter a card that you can see on the screen by typing the first letter" << endl;
+    cout << "of its suit followed by a space followed by its number." << endl;
+    cout << "\tEx: C 10 (for the 10 of clubs)" << endl;
+    cout << "For the second move, enter the location that you want to move the card to." << endl;
+    cout << "\tUse the numbers 1-7 for each of the piles." << endl;
+    cout << "\tUse the letters S, H, C, or D for the foundation piles at the bottom of the screen." << endl;
+    cout << "\n\nType anything to return to game." << endl;
+    string wait;
+    cin >> wait;
+}
+
+/* Function Name: cardLocation
+ *
+ * Function Description:
+ * This function determines where the card is on the table.
+ *
+ * Parameters:
+ * Card c - the card to find on table
+ *
+ * return value:
+ * string
+ */
+string cardLocation(Card c){
+    //Check hand pile
+    if (c == handPile.curCard){
+        return "hand";
+    }
+    //Check tableau piles
+    else if (pile1.inPile(c)){
+        return "pile1";
+    }
+    else if (pile2.inPile(c)){
+        return "pile2";
+    }
+    else if (pile3.inPile(c)){
+        return "pile3";
+    }
+    else if (pile4.inPile(c)){
+        return "pile4";
+    }
+    else if (pile5.inPile(c)){
+        return "pile5";
+    }
+    else if (pile6.inPile(c)){
+        return "pile6";
+    }
+    else if (pile7.inPile(c)){
+        return "pile7";
+    }
+    //Check foundation piles
+    else if (hearts.curCard == c){
+        return "hearts";
+    }
+    else if (spades.curCard == c){
+        return "spades";
+    }
+    else if (clubs.curCard == c){
+        return "clubs";
+    }
+    else if (diamonds.curCard == c){
+        return "diamonds";
+    }
+    else{
+        return "invalid";
+    }
+
+}
+
+/* Function Name: tableauToTableau
+ *
+ * Function Description:
+ * This function moves a pile of cards from one tableau pile to another.
+ *
+ * Parameters:
+ * Card c - the card entered on move
+ * moveFrom - pile to move card(s) from
+ * moveTo - pile to move card(s) to
+ *
+ * return value:
+ * none
+ */
+void tableauToTableau(Card &c, Tableau &moveFrom, Tableau &moveTo){
+    vector<Card> cardsToMove;
+    cardsToMove = moveFrom.getCardsBelow(c);
+    for (int i = 0; i < cardsToMove.size(); i++){
+        moveTo.addCard(cardsToMove.at(i));
+    }
+}
+
+/* Function Name: handToTableau
+ *
+ * Function Description:
+ * This function moves a card from the hand to a tableau pile.
+ *
+ * Parameters:
+ * Card c - the card entered on move
+ * pile - pile to move card to
+ *
+ * return value:
+ * none
+ */
+void handToTableau(Card &c, Tableau &pile){
+    pile.addCard(c);
+    handPile.removeCard();
+}
+
+/* Function Name: TableauToFoundation
+ *
+ * Function Description:
+ * This function moves a card from a tableau pile to a foundation pile.
+ *
+ * Parameters:
+ * Card c - the card to move
+ * found - foundation pile to move card to
+ * pile - pile to move card from
+ *
+ * return value:
+ * string
+ */
+void tableauToFoundation(Card &c, Foundation &found, Tableau &pile){
+    if (c == pile.getLastCard()){
+        found.addCard(c);
+        pile.deleteLastCard();
+    }
+    else{
+        cout << "You can only move cards to foundation if they are the last in the pile." << endl;
+    }
+
+}
+
+/* Function Name: handToFoundation
+ *
+ * Function Description:
+ * This function moves card from hand to foundation.
+ *
+ * Parameters:
+ * Card c - the card to move
+ * found - foundation pile to move to
+ *
+ * return value:
+ * void
+ */
+void handToFoundation(Card &c, Foundation &found){
+    found.addCard(c);
+    handPile.removeCard();
+}
+
+/* Function Name: win
+ *
+ * Function Description:
+ * This function displays the winning text and returns whether
+ * player wants to play again.
+ *
+ * Parameters:
+ * none
+ *
+ * return value:
+ * bool
+ */
+bool win(){
+    string playAgain;
+    system("CLS");
+    cout << "YOU WIN!!!" << endl;
+    cout << "Play again? (Y or N): " << endl;
+    cin >> playAgain;
+    if (playAgain == "Y" || playAgain == "y"){
+        return true;
+    }
+    return false;
+}
+
+/* Function Name: lose
+ *
+ * Function Description:
+ * This function displays losing text.
+ *
+ * Parameters:
+ * none
+ *
+ * return value:
+ * none
+ */
+void lose(){
+    system("CLS");
+    cout << "There are no more moves to be made. You lose :(" << endl;
+    loseGame = true;
+}
+
+/* Function Name: startGame
+ *
+ * Function Description:
+ * This function starts the game.
+ *
+ * Parameters:
+ * none
+ *
+ * return value:
+ * none
+ */
+void startGame(){
+    //Shuffle deck
+    deck = shuffle(deck);
+
+    //Set up hand and waste pile
+    Hand tempHand(deck);
+    handPile.empty();
+    handPile = tempHand;
+    wastePile.emptyTheTrash();
+
+    //Set up tableu piles
+    vector<Card> temp1, temp2, temp3, temp4, temp5, temp6, temp7;
+    temp1.push_back(deck.at(0));
+    temp2.push_back(deck.at(1));
+    temp2.push_back(deck.at(2));
+    int count = 3;
+    for (int i = 0; i < 3; i++){
+        temp3.push_back(deck.at(count));
+        count++;
+    }
+    for (int i = 0; i < 4; i++){
+        temp4.push_back(deck.at(count));
+        count++;
+    }
+    for (int i = 0; i < 5; i++){
+        temp5.push_back(deck.at(count));
+        count++;
+    }
+    for (int i = 0; i < 6; i++){
+        temp6.push_back(deck.at(count));
+        count++;
+    }
+    for (int i = 0; i < 7; i++){
+        temp7.push_back(deck.at(count));
+        count++;
+    }
+
+    Tableau p1(temp1);
+    pile1.empty();
+    pile1 = p1;
+    Tableau p2(temp2);
+    pile2.empty();
+    pile2 = p2;
+    Tableau p3(temp3);
+    pile3.empty();
+    pile3 = p3;
+    Tableau p4(temp4);
+    pile4.empty();
+    pile4 = p4;
+    Tableau p5(temp5);
+    pile5.empty();
+    pile5 = p5;
+    Tableau p6(temp6);
+    pile6.empty();
+    pile6 = p6;
+    Tableau p7(temp7);
+    pile7.empty();
+    pile7 = p7;
+}
+
+//MAIN
+int main()
+{
+    //Seed random
+    srand(time(NULL));
+
+    //Create deck
+    deck = createDeck(deck);
+
+    startGame();
+
+    //Print playing table
+    printTable(handPile, pile1, pile2, pile3, pile4, pile5, pile6, pile7, spades, hearts, clubs, diamonds);
+
+
+    //Make move
+    string control = "";
+    string moveTo = "";
+    Card move;
+    string loc;
+    char loc2;
+    string wait;
+    while (control != "Q" || control != "q"){
+        cout << "\nMake your move (type H for help): " << endl;
+        cin >> control;
+        //Draw card if user enters D
+        if (control == "D" || control == "d"){
+            drawCard(handPile, wastePile);
+        }
+        //Restart game if user enters R
+        else if (control == "R" || control == "r"){
+            startGame();
+        }
+        //Quit game if user enters Q
+        else if(control == "Q" || control == "q"){
+            break;
+        }
+        //Print help if user enters H
+        else if (control == "H" || control == "h"){
+            help();
+        }
+        //Make move if user enters M
+        else if (control == "M" || control == "m"){
+            cout << "Enter card to move (suit followed by a space and number i.e. H 1):" << endl;
+            cin >> move;
+            loc = cardLocation(move);
+            cout << "Enter location to move card to (1-7 or H, S, C, D):" << endl;
+            cin >> loc2;
+            //Call function based on location
+            if (loc == "hand"){
+                if (loc2 == '1'){
+                    handToTableau(move, pile1);
+                }
+                else if (loc2 == '2'){
+                    handToTableau(move, pile2);
+                }
+                else if (loc2 == '3'){
+                    handToTableau(move, pile3);
+                }
+                else if (loc2 == '4'){
+                    handToTableau(move, pile4);
+                }
+                else if (loc2 == '5'){
+                    handToTableau(move, pile5);
+                }
+                else if (loc2 == '6'){
+                    handToTableau(move, pile6);
+                }
+                else if (loc2 == '7'){
+                    handToTableau(move, pile7);
+                }
+                else if (loc2 == 'H'){
+                    handToFoundation(move, hearts);
+                }
+                else if (loc2 == 'S'){
+                    handToFoundation(move, spades);
+                }
+                else if (loc2 == 'C'){
+                    handToFoundation(move, clubs);
+                }
+                else if (loc2 == 'D'){
+                    handToFoundation(move, diamonds);
+                }
+            }
+        }
+        cout << "Type anything to continue." << endl;
+        cin >> wait;
+        //Check if game has been won
+        if (spades.nextNum == 14 && hearts.nextNum == 14 && clubs.nextNum == 14 && diamonds.nextNum == 14){
+            bool playAgain;
+            playAgain = win();
+            if (playAgain){
+                startGame();
+            }
+            else{
+                break;
+            }
+        }
+
+        //Check if it is impossible to win
+        if (loseGame){
+            string playAgain;
+            cout << "Play again? (Y or N)" << endl;
+            cin >> playAgain;
+            if (playAgain == "Y" || playAgain == "y"){
+                startGame();
+            }
+            else{
+                break;
+            }
+        }
+
+        //Reset table
+        system("CLS");
+        printTable(handPile, pile1, pile2, pile3, pile4, pile5, pile6, pile7, spades, hearts, clubs, diamonds);
+    }
+
+
+    return 0;
+}

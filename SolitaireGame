@@ -4,28 +4,6 @@
  * Description: (should be a few sentences)
  * This program is a game where the player has to get all of the cards into
  * the foundation piles at the bottom of the screen. If not, they LOSE.
- *
- * Developers:
- * - Sophia Keller - kellesm@mail.uc.edu
- * - Caden Trubee- trubeect@mail.uc.edu
- *
- * Help Received:
- *
- * Special Instructions: // optional
- * - Type h to begin the game in order to see what commands to use
- * - Also, the game is designed to be very hard and you will lose if
- *   you get to the end of the deck without winning.
- *
- * Developer comments: // Not optional
- * Developer 1 - Sophia Keller:
- * I developed most of the logic of what the game would need, and
- * created some of the functions and classes. I learned that solitaire is actually
- * quite complicated.
- * Developer 2 - Caden Trubee:
- * I developed some of the logic and double checked the logic of developer
- * 1.  I came up with how the creative flow should work.  I also created
- * some of the functions. I helped to create the classes as well. I learned there are
- * so many different ways to program one thing.
  */
 
 #include <iostream>

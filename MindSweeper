@@ -5,26 +5,6 @@
  * This program is a game where the player has to identify where the
  * stars on the game board are. If they click a star, it explodes and
  * the player loses. If they find all the stars, the player wins.
- *
- * Developers:
- * - Sophia Keller - kellesm@mail.uc.edu
- * - Caden Trubee- trubeect@mail.uc.edu
- *
- * Help Received:
- *
- * Special Instructions: // optional
- * - No special instructions
- *
- * Developer comments: // Not optional
- * Developer 1:
- * I developed most of the logic of what the game would need, and
- * created some of the functions. I learned that coding requires a lot
- * of patience and determination.
- * Developer 2:
- * I developed some of the logic and double checked the logic of developer
- * 1.  I came up with how the creative flow should work.  I also created
- * some of the functions.  I learned there are so many different ways to
- * program one thing.
  */
 
 

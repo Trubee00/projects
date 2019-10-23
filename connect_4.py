@@ -1,3 +1,5 @@
+# This is a connect 4 game using the pygame library to use graphics and animations
+
 import numpy as np
 import pygame
 import sys
